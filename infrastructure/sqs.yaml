@@ -1,0 +1,31 @@
+# infrastructure/sqs.yaml
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'SQS Queue for Facebook data processing'
+
+Resources:
+  FacebookDataQueue:
+    Type: 'AWS::SQS::Queue'
+    Properties:
+      QueueName: facebook-data-queue
+      VisibilityTimeout: 300  # 5 minutes
+      MessageRetentionPeriod: 345600  # 4 days
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt FacebookDataDLQ.Arn
+        maxReceiveCount: 3
+        
+  FacebookDataDLQ:
+    Type: 'AWS::SQS::Queue'
+    Properties:
+      QueueName: facebook-data-dlq
+      MessageRetentionPeriod: 1209600  # 14 days
+
+Outputs:
+  QueueURL:
+    Description: URL of the main queue
+    Value: !Ref FacebookDataQueue
+  QueueARN:
+    Description: ARN of the main queue
+    Value: !GetAtt FacebookDataQueue.Arn
+  DLQUrl:
+    Description: URL of the dead letter queue
+    Value: !Ref FacebookDataDLQ

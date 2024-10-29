@@ -1,0 +1,30 @@
+# infrastructure/dynamodb.yaml
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'DynamoDB Tables for sentiment analysis results'
+
+Resources:
+  SentimentResultsTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName: facebook-sentiment-results
+      AttributeDefinitions:
+        - AttributeName: postId
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: S
+      KeySchema:
+        - AttributeName: postId
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+
+Outputs:
+  TableName:
+    Description: Name of the DynamoDB table
+    Value: !Ref SentimentResultsTable
+  TableArn:
+    Description: ARN of the DynamoDB table
+    Value: !GetAtt SentimentResultsTable.Arn

@@ -1,0 +1,9 @@
+version: 0.0
+Resources:
+  - facebook-data-processor:
+      Type: AWS::Lambda::Function
+      Properties:
+        Name: "facebook-data-processor"
+        Alias: "PROD"
+        CurrentVersion: "1"
+        TargetVersion: "2"

@@ -1,0 +1,80 @@
+# infrastructure/lambda.yaml
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Lambda Functions for Facebook data processing'
+
+Parameters:
+  SQSQueueArn:
+    Type: String
+    Description: ARN of the SQS Queue
+  DynamoDBTableArn:
+    Type: String
+    Description: ARN of the DynamoDB Table
+  S3BucketName:
+    Type: String
+    Description: Name of the S3 Bucket
+
+Resources:
+  LambdaExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: LambdaCustomPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                Resource: !Ref SQSQueueArn
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                Resource: !Ref DynamoDBTableArn
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                Resource: !Sub arn:aws:s3:::${S3BucketName}/*
+              - Effect: Allow
+                Action:
+                  - comprehend:DetectSentiment
+                Resource: '*'
+
+  ProcessingFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      FunctionName: facebook-data-processor
+      Runtime: python3.9
+      Handler: index.handler
+      Code:
+        ZipFile: |
+          def handler(event, context):
+              # Code will be deployed via CI/CD
+              pass
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: 300
+      MemorySize: 256
+      Environment:
+        Variables:
+          DYNAMODB_TABLE: !Select [1, !Split ['/', !Ref DynamoDBTableArn]]
+          S3_BUCKET: !Ref S3BucketName
+
+Outputs:
+  LambdaFunctionArn:
+    Description: ARN of the Lambda function
+    Value: !GetAtt ProcessingFunction.Arn
+  LambdaRoleArn:
+    Description: ARN of the Lambda execution role
+    Value: !GetAtt LambdaExecutionRole.Arn

@@ -1,0 +1,33 @@
+# infrastructure/s3.yaml
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'S3 Buckets for raw data and analysis results'
+
+Resources:
+  RawDataBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Sub '${AWS::StackName}-raw-data'
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: TransitionToGlacier
+            Status: Enabled
+            Transitions:
+              - StorageClass: GLACIER
+                TransitionInDays: 90
+
+  AnalysisResultsBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Sub '${AWS::StackName}-analysis-results'
+      VersioningConfiguration:
+        Status: Enabled
+
+Outputs:
+  RawDataBucketName:
+    Description: Name of the raw data bucket
+    Value: !Ref RawDataBucket
+  AnalysisResultsBucketName:
+    Description: Name of the analysis results bucket
+    Value: !Ref AnalysisResultsBucket
